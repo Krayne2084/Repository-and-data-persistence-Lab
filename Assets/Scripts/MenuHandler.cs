@@ -3,13 +3,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.SceneManagement;
+using System.IO;
+using TMPro;
 
 public class MenuHandler : MonoBehaviour
 {
     public static MenuHandler Instance;
+
+    public string PlayerName;
+    public static string SavePath;
+    public TextMeshProUGUI HighScoreDisplay;
+    public TMP_InputField NameInput;
+    public GameObject NameWarning;
     private void Awake()
     {
-        if (Instance)
+        SavePath = Application.persistentDataPath + "/saveFile.json";
+        if (!Instance)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
@@ -18,10 +27,15 @@ public class MenuHandler : MonoBehaviour
         {
             Destroy(gameObject);
         }
+        DisplayHighScore();
     }
     public void StartGame()
     {
-        print("Load main Scene");
+        if(NameInput.text == null)
+        {
+            NameWarning.SetActive(true);
+            return;
+        }
         SceneManager.LoadScene(1);
     }
 
@@ -32,7 +46,6 @@ public class MenuHandler : MonoBehaviour
 
     public void ExitGame()
     {
-        print("Exit Game");
 #if UNITY_EDITOR
         EditorApplication.ExitPlaymode();
 #else
@@ -40,5 +53,50 @@ public class MenuHandler : MonoBehaviour
 #endif
     }
 
-    
+    public void UpdateName()
+    {
+        PlayerName = NameInput.text;
+    }
+
+    public class Score
+    {
+        public string PlayerName;
+        public int HighScore;
+    }
+
+    public void SaveHighScore(int score)
+    {
+        Score past = LoadHighScore();
+        if (past.HighScore < score)
+        {
+            past.HighScore = score;
+            past.PlayerName = PlayerName;
+            string json = JsonUtility.ToJson(past);
+            File.WriteAllText(SavePath, json);
+        }
+    }
+
+    public Score LoadHighScore()
+    {
+        if (File.Exists(SavePath))
+        {
+            string json = File.ReadAllText(SavePath);
+            Score data =  JsonUtility.FromJson<Score>(json);
+            return data;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    void DisplayHighScore()
+    {
+        Score score = LoadHighScore();
+        if (score == null)
+        {
+            return;
+        }
+        HighScoreDisplay.text = $"High Score: {score.PlayerName} - {score.HighScore}";
+    }
 }
