@@ -12,9 +12,6 @@ public class MenuHandler : MonoBehaviour
 
     public string PlayerName;
     public static string SavePath;
-    public TextMeshProUGUI HighScoreDisplay;
-    public TMP_InputField NameInput;
-    public GameObject NameWarning;
     private void Awake()
     {
         SavePath = Application.persistentDataPath + "/saveFile.json";
@@ -27,21 +24,16 @@ public class MenuHandler : MonoBehaviour
         {
             Destroy(gameObject);
         }
-        DisplayHighScore();
     }
-    public void StartGame()
+    public void StartGame(TMP_InputField nameInput, GameObject nameWarning)
     {
-        if(NameInput.text == null)
+        if(nameInput.text == "")
         {
-            NameWarning.SetActive(true);
+            nameWarning.SetActive(true);
             return;
         }
+        UpdateName(nameInput);
         SceneManager.LoadScene(1);
-    }
-
-    public void BackToMenu()
-    {
-        SceneManager.LoadScene(0);
     }
 
     public void ExitGame()
@@ -53,9 +45,9 @@ public class MenuHandler : MonoBehaviour
 #endif
     }
 
-    public void UpdateName()
+    public void UpdateName(TMP_InputField nameInput)
     {
-        PlayerName = NameInput.text;
+        PlayerName = nameInput.text;
     }
 
     public class Score
@@ -67,8 +59,12 @@ public class MenuHandler : MonoBehaviour
     public void SaveHighScore(int score)
     {
         Score past = LoadHighScore();
-        if (past.HighScore < score)
+        if (past == null)
         {
+            past = new Score();
+        }
+        if(past.HighScore < score) 
+        { 
             past.HighScore = score;
             past.PlayerName = PlayerName;
             string json = JsonUtility.ToJson(past);
@@ -90,13 +86,23 @@ public class MenuHandler : MonoBehaviour
         }
     }
 
-    void DisplayHighScore()
+    public void DisplayHighScore(TextMeshProUGUI highScoreDisplay)
     {
         Score score = LoadHighScore();
         if (score == null)
         {
+            highScoreDisplay.text = "High Score: 0";
             return;
         }
-        HighScoreDisplay.text = $"High Score: {score.PlayerName} - {score.HighScore}";
+        highScoreDisplay.text = $"High Score: {score.PlayerName}: {score.HighScore}";
+    }
+
+    public void ClearHighScore(TextMeshProUGUI highScoreDisplay)
+    {
+        if (File.Exists(SavePath))
+        {
+            File.Delete(SavePath);
+        }
+        DisplayHighScore(highScoreDisplay);
     }
 }
